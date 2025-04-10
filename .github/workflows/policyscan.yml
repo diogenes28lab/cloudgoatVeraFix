@@ -1,0 +1,33 @@
+name: Veracode Policy Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-policy-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Etapa 1: Clona o repositório para o runner do GitHub
+      - uses: actions/checkout@v2
+
+      # Etapa 2: Comprime os arquivos de código em um zip
+      - name: Zip Project
+        run: zip -R project.zip '*.py' '*.js' '*.php' '*.ts' 'requirements.txt'
+        env:
+          build-name: project.zip
+
+      # Etapa 3: Salva o arquivo zip como artefato (opcional, mas útil para debug)
+      - uses: actions/upload-artifact@v2
+        with:
+          path: project.zip
+
+      # Etapa 4: Executa o upload e o policy scan no Veracode
+      - uses: veracode/veracode-uploadandscan-action@master
+        with:
+          appname: '${{ secrets.VERACODE_APP_NAME }}'     # Nome da aplicação na Veracode (ex: cloudgoat002)
+          filepath: 'project.zip'                         # Caminho para o zip criado
+          vid: '${{ secrets.VERACODE_API_ID }}'           # ID da API da Veracode
+          vkey: '${{ secrets.VERACODE_API_KEY }}'         # Chave da API da Veracode
+          scantimeout: 15                                 # Tempo máximo de espera pelo scan
+          createprofile: true                             # Cria o app na Veracode se ele ainda não existir
